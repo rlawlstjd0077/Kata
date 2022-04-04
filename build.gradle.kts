@@ -8,6 +8,10 @@ allprojects {
     }
 }
 
+subprojects {
+    apply(plugin = "kotlin")
+}
+
 description = "Gradle Tutorial Basic"
 version = "1.0"
 

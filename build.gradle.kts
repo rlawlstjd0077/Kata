@@ -1,5 +1,8 @@
 plugins {
-    kotlin("jvm") version "1.5.10"
+    kotlin("jvm") version Versions.kotlinVersion
+    kotlin("plugin.spring") version Versions.kotlinVersion
+    kotlin("plugin.noarg") version Versions.kotlinVersion apply false
+    kotlin("plugin.allopen") version Versions.kotlinVersion apply false
 }
 
 allprojects {
@@ -10,6 +13,14 @@ allprojects {
 
 subprojects {
     apply(plugin = "kotlin")
+    apply(plugin = "kotlin-spring")
+
+    dependencies {
+        implementation(kotlin("stdlib"))
+        implementation("org.jetbrains.kotlin:kotlin-reflect")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
+        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    }
 }
 
 description = "Gradle Tutorial Basic"
@@ -18,11 +29,7 @@ version = "1.0"
 group = "org.example"
 
 
-dependencies {
-    implementation(kotlin("stdlib"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-}
+
 
 tasks.getByName<Test>("test") {
     useJUnitPlatform()

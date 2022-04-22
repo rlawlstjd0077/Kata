@@ -15,11 +15,16 @@ subprojects {
     apply(plugin = "kotlin")
     apply(plugin = "kotlin-spring")
 
+    tasks.withType<Test> {
+        useJUnitPlatform()
+    }
+
     dependencies {
         implementation(kotlin("stdlib"))
         implementation("org.jetbrains.kotlin:kotlin-reflect")
         testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+        testImplementation("io.strikt:strikt-core:0.34.1")
     }
 }
 

@@ -24,5 +24,8 @@ enum class Level(level: Int) {
 data class User(
     val id: String,
     val name: String,
-    val password: String
+    val password: String,
+    val level: Level,
+    val login: Int,
+    val recommend: Int
 )

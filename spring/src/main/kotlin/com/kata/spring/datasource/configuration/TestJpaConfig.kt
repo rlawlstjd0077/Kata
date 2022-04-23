@@ -19,10 +19,9 @@ import javax.sql.DataSource
     ]
 )
 @EnableTransactionManagement
-open class H2TestProfileJPAConfig {
+open class TestJpaConfig {
 
     @Bean
-    @Profile("test")
     fun dataSource(): DataSource {
         val dataSource = DriverManagerDataSource()
         dataSource.setDriverClassName("org.h2.Driver")

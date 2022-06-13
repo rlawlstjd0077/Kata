@@ -15,7 +15,7 @@ enum class Level(level: Int) {
                 1 -> BASIC
                 2 -> SILVER
                 3 -> GOLD
-                else -> throw java.lang.AssertionError("Unknown value: " + value)
+                else -> throw java.lang.AssertionError("Unknown value: $value")
             }
         }
     }

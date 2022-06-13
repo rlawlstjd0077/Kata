@@ -1,11 +1,10 @@
 package com.kata.spring.datasource
 
-import com.kata.spring.datasource.configuration.H2TestProfileJPAConfig
+import com.kata.spring.datasource.configuration.TestJpaConfig
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import strikt.api.expectThat
 import javax.sql.DataSource
 
 
@@ -14,7 +13,7 @@ import javax.sql.DataSource
  */
 @SpringBootTest(classes = [
     DataSourceTestApplication::class,
-    H2TestProfileJPAConfig::class
+    TestJpaConfig::class
 ])
 @ActiveProfiles("test")
 class H2DatabaseTest {

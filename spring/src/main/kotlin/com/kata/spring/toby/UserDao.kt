@@ -4,6 +4,7 @@ import com.kata.spring.utils.notNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
 import javax.sql.DataSource
+import kotlin.math.log
 
 
 /**
@@ -18,7 +19,10 @@ class UserDao(
         User(
             id = rs.getString("id"),
             name = rs.getString("name"),
-            password = rs.getString("password")
+            password = rs.getString("password"),
+            level = Level.valueOf(rs.getString("level")),
+            login = rs.getInt("login"),
+            recommend = rs.getInt("recommend")
         )
     }
 
@@ -27,7 +31,8 @@ class UserDao(
     }
 
     fun add(user: User) {
-        jdbcTemplate.update("insert into users(id, name, password) values(?,?,?)", user.id, user.name, user.password)
+        val sql = "insert into users(id, name, password, level, login, recommend) values(?,?,?,?,?,?)"
+        jdbcTemplate.update(sql, user.id, user.name, user.password, user.level.name, user.login, user.recommend)
     }
 
     fun get(id: String): User {

@@ -1,6 +1,5 @@
 package com.kata.spring.type_token
 
-import com.sun.jdi.Type
 import java.lang.reflect.ParameterizedType
 
 

@@ -21,6 +21,18 @@ open class FluxApplication {
 
 @RestController
 class MyController {
+    /*
+    @GetMapping("/hello")
+    fun hello(): Mono<String> {
+        println("log1")
+        val m = Mono.fromSupplier { generateHello() }.log()
+        m.subscribe()
+        //val m = Mono.just(generateHello()).log()
+        println("log2")
+        return m
+    }
+    */
+
     @GetMapping("/event/{id}")
     fun hello(
         @PathVariable id: Long

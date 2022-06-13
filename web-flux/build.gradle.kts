@@ -1,6 +1,4 @@
 plugins {
-    id("org.springframework.boot") version Versions.springBootVersion
-    id("io.spring.dependency-management") version Versions.springDependencyManagementVersion
 
     kotlin("plugin.allopen")
     kotlin("plugin.noarg")

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
+import strikt.api.expectThat
 import javax.sql.DataSource
 
 
@@ -21,12 +22,9 @@ class H2DatabaseTest {
     private lateinit var datasource: DataSource
 
     @Test
-    fun `test`() {
+    fun `dataSource 로딩 테스트`() {
         // given
-        println("fasfsa")
-
-        // when
-
-        // then
+        assert(datasource != null)
     }
 }
+

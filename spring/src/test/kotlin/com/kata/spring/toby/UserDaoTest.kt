@@ -16,7 +16,7 @@ import javax.annotation.PostConstruct
 import javax.sql.DataSource
 
 
-@SpringBootTest(classes = [TobyTestDatasourceConfig::class, UserDaoJdbc::class])
+@SpringBootTest(classes = [TobyTestConfig::class, UserDaoJdbc::class])
 @ActiveProfiles("test")
 class UserDaoTest {
     @Autowired
@@ -32,7 +32,7 @@ class UserDaoTest {
         jdbcTemplate = JdbcTemplate(dataSource)
 
         try  {
-            jdbcTemplate.execute("create table users (id varchar , name varchar, password varchar, level varchar, login varchar, recommend varchar )")
+            jdbcTemplate.execute("create table users (id varchar , name varchar, password varchar, level varchar, login varchar, recommend varchar, email varchar )")
         } catch (e: BadSqlGrammarException) {
             /**
              * Class 레벨로 한번만 실행할 방법을 찾지 못해 우선 이렇게 처리 ..
@@ -48,9 +48,9 @@ class UserDaoTest {
         @Test
         fun `getAll() 메서드는 저장된 모든 user 목록을 반환한다`() {
             // given
-            val user1 = User(id = "1", name = "1 user", password = "password", level = Level.BASIC, login = 1, recommend = 1)
-            val user2 = User(id = "2", name = "2 user", password = "password", level = Level.BASIC, login = 1, recommend = 1)
-            val user3 = User(id = "3", name = "3 user", password = "password", level = Level.BASIC, login = 1, recommend = 1)
+            val user1 = User(id = "1", name = "1 user", password = "password", level = Level.BASIC, login = 1, recommend = 1, email = "user1@test.com")
+            val user2 = User(id = "2", name = "2 user", password = "password", level = Level.BASIC, login = 1, recommend = 1, email = "user2@test.com")
+            val user3 = User(id = "3", name = "3 user", password = "password", level = Level.BASIC, login = 1, recommend = 1, email = "user3@test.com")
 
             // when
             // then
@@ -86,7 +86,7 @@ class UserDaoTest {
         @Test
         fun `update() 테스트`() {
             // given
-            val user1 = User(id = "1", name = "1 user", password = "password", level = Level.BASIC, login = 1, recommend = 1)
+            val user1 = User(id = "1", name = "1 user", password = "password", level = Level.BASIC, login = 1, recommend = 1, email = "user1@test.com")
             userDao.add(user1)
 
 
@@ -105,5 +105,4 @@ class UserDaoTest {
             expectThat(updatedUser) isEqualTo updateUser
         }
     }
-
 }

@@ -1,9 +1,13 @@
 package com.kata.spring.toby
 
+import com.kata.spring.toby.service.MockMailSender
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.jdbc.datasource.DataSourceTransactionManager
 import org.springframework.jdbc.datasource.DriverManagerDataSource
+import org.springframework.mail.MailSender
+import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.annotation.EnableTransactionManagement
 import javax.sql.DataSource
 
@@ -16,7 +20,7 @@ import javax.sql.DataSource
  */
 @Configuration
 @EnableTransactionManagement
-open class TobyTestDatasourceConfig {
+open class TobyTestConfig {
 
     @Bean
     @Profile("test")
@@ -27,5 +31,17 @@ open class TobyTestDatasourceConfig {
         dataSource.username = "sa"
         dataSource.password = "sa"
         return dataSource
+    }
+
+    @Bean
+    @Profile("test")
+    fun transactionManager(): PlatformTransactionManager {
+        return DataSourceTransactionManager(dataSource())
+    }
+
+    @Bean
+    @Profile("test")
+    fun mailSender(): MailSender{
+        return MockMailSender()
     }
 }

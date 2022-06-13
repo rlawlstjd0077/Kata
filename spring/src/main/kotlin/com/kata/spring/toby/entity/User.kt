@@ -30,5 +30,17 @@ data class User(
     val password: String,
     var level: Level?,
     var login: Int,
-    val recommend: Int
-)
+    val recommend: Int,
+    val email: String
+) {
+
+    fun upgrade() {
+        val nextLevel = level!!.next
+
+        if (nextLevel == null) {
+            throw IllegalArgumentException("$level 은 업그레이드 불가함")
+        } else {
+            level = nextLevel
+        }
+    }
+}

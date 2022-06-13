@@ -3,14 +3,20 @@ package com.kata.spring.toby.service
 import com.kata.spring.toby.Level
 import com.kata.spring.toby.User
 import com.kata.spring.toby.repository.UserDao
+import org.springframework.mail.MailSender
+import org.springframework.mail.SimpleMailMessage
 import org.springframework.stereotype.Service
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.DefaultTransactionDefinition
 
 
 /**
  * @author Jay
  */
 @Service
-class UserService(
+open class UserService(
+    private val mailSender: MailSender,
+    private val transactionManager: PlatformTransactionManager,
     private val userDao: UserDao
 ) {
 
@@ -20,54 +26,51 @@ class UserService(
     }
 
     fun upgradeLevels() {
-        val users = userDao.getAll()
+        val status = transactionManager.getTransaction(DefaultTransactionDefinition())
 
-        users.forEach {
+        try {
+            val users = userDao.getAll()
 
-            var changed = false
-
-            if (canUpgradeLevel(it)) {
-                upgradeLevel(it)
+            users.forEach {
+                if (canUpgradeLevel(it)) {
+                    upgradeLevel(it)
+                }
             }
-
-            if (it.level == Level.BASIC && it.login >= 50) {
-                it.level = Level.SILVER
-                changed = true
-            } else if (it.level == Level.SILVER && it.recommend >= 30) {
-               it.level = Level.GOLD
-                changed = true
-            } else if (it.level == Level.GOLD) {
-                changed = false
-            } else {
-                changed = false
-            }
-
-            if (changed) userDao.update(it)
+            transactionManager.commit(status)
+        } catch (e: Exception) {
+            transactionManager.rollback(status)
+            throw e
         }
     }
 
-    private fun upgradeLevel(user: User) {
+    protected fun upgradeLevel(user: User) {
         user.upgrade()
         userDao.update(user)
+        sendUpgradeEmail(user)
+    }
+
+    private fun sendUpgradeEmail(user: User) {
+        val mailMessage = SimpleMailMessage()
+        mailMessage.setTo(user.email)
+        mailMessage.from = "admin@gmail.com"
+        mailMessage.subject = "Upgrade 안내"
+        mailMessage.setText("사용자님의 등급이 ${user.level!!.name} 로 업그레이드 되었습니다.")
+
+        mailSender.send(mailMessage)
     }
 
     private fun canUpgradeLevel(user: User): Boolean {
-        return when(user.level) {
-            Level.BASIC -> user.login >= 50
-            Level.SILVER -> user.recommend >= 30
+        return when (user.level) {
+            Level.BASIC -> user.login >= MIN_LOGCOUNT_FOR_SILVER
+            Level.SILVER -> user.recommend >= MIN_RECOMMEND_FOR_GOLD
             Level.GOLD -> false
             null -> throw java.lang.IllegalArgumentException("Unknown Level: ${user.level}")
         }
     }
 
-    private fun User.upgrade() {
-        val nextLevel = level!!.next
-
-        if (nextLevel == null) {
-            throw IllegalArgumentException("$level 은 업그레이드 불가함")
-        } else {
-            level = nextLevel
-        }
+    companion object {
+        const val MIN_LOGCOUNT_FOR_SILVER = 50
+        const val MIN_RECOMMEND_FOR_GOLD = 30
     }
 }
 

@@ -1,19 +1,19 @@
 package com.kata.spring.toby.service
 
 import com.kata.spring.toby.Level
-import com.kata.spring.toby.Toby
-import com.kata.spring.toby.TobyTestDatasourceConfig
+import com.kata.spring.toby.TobyTestConfig
 import com.kata.spring.toby.User
 import com.kata.spring.toby.repository.UserDao
 import com.kata.spring.toby.repository.UserDaoJdbc
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.context.annotation.ComponentScan
 import org.springframework.jdbc.BadSqlGrammarException
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.datasource.DataSourceTransactionManager
+import org.springframework.mail.MailSender
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.transaction.PlatformTransactionManager
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import javax.annotation.PostConstruct
@@ -22,7 +22,7 @@ import javax.sql.DataSource
 /**
  * TODO 특정 패키지 아래로 Component Scan 수행하도록 수정 필요함
  */
-@SpringBootTest(classes = [UserService::class, UserDaoJdbc::class, TobyTestDatasourceConfig::class])
+@SpringBootTest(classes = [UserService::class, UserDaoJdbc::class, TobyTestConfig::class])
 @ActiveProfiles("test")
 class UserServiceTest {
     @Autowired
@@ -36,13 +36,20 @@ class UserServiceTest {
 
     private lateinit var jdbcTemplate: JdbcTemplate
 
+    @Autowired
+    private lateinit var transactinoManager: PlatformTransactionManager
+
+    @Autowired
+    private lateinit var mockMailSender: MailSender
+
 
     @PostConstruct
     fun setUp() {
         jdbcTemplate = JdbcTemplate(dataSource)
+        transactinoManager = DataSourceTransactionManager(dataSource)
 
         try  {
-            jdbcTemplate.execute("create table users (id varchar , name varchar, password varchar, level varchar, login varchar, recommend varchar )")
+            jdbcTemplate.execute("create table users (id varchar , name varchar, password varchar, level varchar, login varchar, recommend varchar, email varchar )")
         } catch (e: BadSqlGrammarException) {
             /**
              * Class 레벨로 한번만 실행할 방법을 찾지 못해 우선 이렇게 처리 ..
@@ -79,30 +86,58 @@ class UserServiceTest {
 
         userService.upgradeLevels()
 
-        val result = userDao.getAll()
+        checkLevel(users[0], false)
+        checkLevel(users[1], true)
+        checkLevel(users[2], false)
+        checkLevel(users[3], true)
+        checkLevel(users[4], false)
 
-        checkLevel(result[0], Level.BASIC)
-        checkLevel(result[1], Level.SILVER)
-        checkLevel(result[2], Level.SILVER)
-        checkLevel(result[3], Level.GOLD)
-        checkLevel(result[4], Level.GOLD)
-
-        // when
-
-        // then
+        val requests = (mockMailSender as MockMailSender).requests
+        expectThat(requests.size) isEqualTo 2
+        expectThat(requests[0]) isEqualTo users[1].email
+        expectThat(requests[1]) isEqualTo users[3].email
     }
 
-    private fun checkLevel(user: User, level: Level) {
-        expectThat(user.level) isEqualTo level
+    @Test
+    fun `updateAllorNothing`() {
+        // given
+        val testService = TestUserService(
+            id = users[3].id,
+            transactionManager = transactinoManager,
+            userDao = userDao,
+            mailSender = MockMailSender()
+        )
+
+        users.forEach {
+            userDao.add(it)
+        }
+
+        try {
+            testService.upgradeLevels()
+        } catch (e: TestServiceExecption) {
+
+        }
+
+        checkLevel(users[1], false)
+    }
+
+    private fun checkLevel(user: User, upgraded: Boolean) {
+        val userUpdate = userDao.get(user.id)
+
+        if (upgraded) {
+            expectThat(userUpdate.level) isEqualTo user.level!!.next
+        } else {
+            expectThat(userUpdate.level) isEqualTo user.level
+        }
     }
 
     companion object {
         val users = listOf(
-            User(id = "1", name = "1 user", password = "password", level = Level.BASIC, login = 49, recommend = 0),
-            User(id = "2", name = "2 user", password = "password", level = Level.BASIC, login = 50, recommend = 0),
-            User(id = "3", name = "3 user", password = "password", level = Level.SILVER, login = 60, recommend = 29),
-            User(id = "4", name = "3 user", password = "password", level = Level.SILVER, login = 60, recommend = 30),
-            User(id = "5", name = "3 user", password = "password", level = Level.GOLD, login = 100, recommend = 100),
+            User(id = "1", name = "1 user", password = "password", level = Level.BASIC, login = 49, recommend = 0, email = "user1@test.com"),
+            User(id = "2", name = "2 user", password = "password", level = Level.BASIC, login = 50, recommend = 0, email = "user2@test.com"),
+            User(id = "3", name = "3 user", password = "password", level = Level.SILVER, login = 60, recommend = 29, email = "user3@test.com"),
+            User(id = "4", name = "3 user", password = "password", level = Level.SILVER, login = 60, recommend = 30, email = "user4@test.com"),
+            User(id = "5", name = "3 user", password = "password", level = Level.GOLD, login = 100, recommend = 100, email = "user5@test.com"),
         )
     }
 }

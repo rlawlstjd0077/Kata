@@ -4,14 +4,17 @@ package com.kata.spring.toby
 /**
  * @author Jay
  */
-enum class Level(level: Int) {
-    BASIC(1),
-    SILVER(2),
-    GOLD(3);
+enum class Level(val level: Int, val _next: Int?) {
+    BASIC(1, 2),
+    SILVER(2, 3),
+    GOLD(3, null);
+
+    val next: Level?
+        get() = _next?.let { Companion.valueOf(it) }
 
     companion object {
-        fun valueOf(value: Int) {
-            when(value) {
+        fun valueOf(value: Int): Level {
+            return when(value) {
                 1 -> BASIC
                 2 -> SILVER
                 3 -> GOLD
@@ -25,7 +28,7 @@ data class User(
     val id: String,
     val name: String,
     val password: String,
-    val level: Level,
-    val login: Int,
+    var level: Level?,
+    var login: Int,
     val recommend: Int
 )

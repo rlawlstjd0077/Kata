@@ -5,12 +5,14 @@ import com.kata.spring.toby.User
 import com.kata.spring.utils.notNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
+import org.springframework.stereotype.Repository
 import javax.sql.DataSource
 
 
 /**
  * @author Jay
  */
+@Repository
 class UserDaoJdbc(
     private val dataSource: DataSource
 ) : UserDao {
@@ -33,7 +35,7 @@ class UserDaoJdbc(
 
     override fun add(user: User) {
         val sql = "insert into users(id, name, password, level, login, recommend) values(?,?,?,?,?,?)"
-        jdbcTemplate.update(sql, user.id, user.name, user.password, user.level.name, user.login, user.recommend)
+        jdbcTemplate.update(sql, user.id, user.name, user.password, user.level!!.name, user.login, user.recommend)
     }
 
     override fun get(id: String): User {
@@ -53,7 +55,7 @@ class UserDaoJdbc(
         val sql = "update users set name = ?, password = ?, level = ?, login = ?," +
                 "recommend = ? where id = ?"
         jdbcTemplate.update(
-            sql, user.name, user.password, user.level.name, user.login, user.recommend, user.id
+            sql, user.name, user.password, user.level!!.name, user.login, user.recommend, user.id
         )
     }
 }

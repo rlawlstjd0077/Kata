@@ -16,19 +16,19 @@ import javax.annotation.PostConstruct
 import javax.sql.DataSource
 
 
-@SpringBootTest(classes = [TobyTestDatasourceConfig::class])
+@SpringBootTest(classes = [TobyTestDatasourceConfig::class, UserDaoJdbc::class])
 @ActiveProfiles("test")
 class UserDaoTest {
     @Autowired
     private lateinit var dataSource: DataSource
 
+    @Autowired
     private lateinit var userDao: UserDao
 
     private lateinit var jdbcTemplate: JdbcTemplate
 
     @PostConstruct
     fun setUp() {
-        userDao = UserDaoJdbc(dataSource)
         jdbcTemplate = JdbcTemplate(dataSource)
 
         try  {
@@ -105,4 +105,5 @@ class UserDaoTest {
             expectThat(updatedUser) isEqualTo updateUser
         }
     }
+
 }

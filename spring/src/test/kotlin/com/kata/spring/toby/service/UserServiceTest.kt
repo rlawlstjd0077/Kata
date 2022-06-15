@@ -7,6 +7,7 @@ import com.kata.spring.toby.repository.UserDao
 import com.kata.spring.toby.repository.UserDaoJdbc
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.BadSqlGrammarException
 import org.springframework.jdbc.core.JdbcTemplate
@@ -16,13 +17,14 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.PlatformTransactionManager
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
+import java.lang.reflect.Proxy
 import javax.annotation.PostConstruct
 import javax.sql.DataSource
 
 /**
  * TODO 특정 패키지 아래로 Component Scan 수행하도록 수정 필요함
  */
-@SpringBootTest(classes = [UserService::class, UserDaoJdbc::class, TobyTestConfig::class])
+@SpringBootTest(classes = [UserServiceImpl::class, UserDaoJdbc::class, TobyTestConfig::class])
 @ActiveProfiles("test")
 class UserServiceTest {
     @Autowired
@@ -79,18 +81,15 @@ class UserServiceTest {
 
     @Test
     fun `upgradeLevels() 테스트`() {
+        val userDao = MockUserDao(users)
+        val userServiceImpl = UserServiceImpl(mockMailSender, userDao)
 
-        users.forEach {
-            userDao.add(it)
-        }
+        userServiceImpl.upgradeLevels()
 
-        userService.upgradeLevels()
-
-        checkLevel(users[0], false)
-        checkLevel(users[1], true)
-        checkLevel(users[2], false)
-        checkLevel(users[3], true)
-        checkLevel(users[4], false)
+        val updated = userDao.updated
+        expectThat(updated.size) isEqualTo 2
+        checkUserAndLevel(updated[0], "2", Level.SILVER)
+        checkUserAndLevel(updated[1], "4", Level.GOLD)
 
         val requests = (mockMailSender as MockMailSender).requests
         expectThat(requests.size) isEqualTo 2
@@ -98,22 +97,36 @@ class UserServiceTest {
         expectThat(requests[1]) isEqualTo users[3].email
     }
 
+    private fun checkUserAndLevel(updated: User, expectedId: String, expectedLevel: Level) {
+        expectThat(updated.id) isEqualTo expectedId
+        expectThat(updated.level) isEqualTo expectedLevel
+    }
+
     @Test
     fun `updateAllorNothing`() {
         // given
-        val testService = TestUserService(
-            id = users[3].id,
+        val transactionHandler = TransactionHandler(
+            target = TestUserService(
+                id = users[3].id,
+                userDao = userDao,
+                mailSender = MockMailSender()
+            ),
             transactionManager = transactinoManager,
-            userDao = userDao,
-            mailSender = MockMailSender()
+            patter = "upgradeLevels"
         )
+
+        val txUserService = Proxy.newProxyInstance(
+            ClassLoader.getSystemClassLoader(),
+            arrayOf(UserService::class.java),
+            transactionHandler
+        ) as UserService
 
         users.forEach {
             userDao.add(it)
         }
 
         try {
-            testService.upgradeLevels()
+            txUserService.upgradeLevels()
         } catch (e: TestServiceExecption) {
 
         }
@@ -140,4 +153,34 @@ class UserServiceTest {
             User(id = "5", name = "3 user", password = "password", level = Level.GOLD, login = 100, recommend = 100, email = "user5@test.com"),
         )
     }
+}
+
+class MockUserDao(
+    val users: List<User>,
+    var updated: List<User> = mutableListOf()
+): UserDao {
+    override fun deleteAll() {
+        TODO("Not yet implemented")
+    }
+
+    override fun add(user: User) {
+        TODO("Not yet implemented")
+    }
+
+    override fun get(id: String): User {
+        TODO("Not yet implemented")
+    }
+
+    override fun getCount(): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun getAll(): List<User> {
+        return users
+    }
+
+    override fun update(user: User) {
+        updated += user
+    }
+
 }

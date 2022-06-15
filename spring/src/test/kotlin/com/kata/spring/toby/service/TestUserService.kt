@@ -12,9 +12,8 @@ import org.springframework.transaction.PlatformTransactionManager
 class TestUserService(
     private val id: String,
     private val mailSender: MailSender,
-    private val transactionManager: PlatformTransactionManager,
     private val userDao: UserDao
-) : UserService(mailSender, transactionManager, userDao) {
+) : UserServiceImpl(mailSender, userDao) {
     override fun upgradeLevel(user: User) {
         if (user.id == this.id) {
             throw TestServiceExecption()

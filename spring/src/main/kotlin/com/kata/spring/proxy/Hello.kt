@@ -1,6 +1,8 @@
 package com.kata.spring.proxy
 
-import org.junit.jupiter.api.Test
+import org.aopalliance.intercept.MethodInterceptor
+import org.aopalliance.intercept.MethodInvocation
+import org.springframework.cglib.proxy.MethodProxy
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 
@@ -46,5 +48,19 @@ class UppwercaseHandler(
     override fun invoke(proxy: Any, method: Method, args: Array<Any>): Any {
         val ret = method.invoke(target, *args)
         return (ret as String).uppercase()
+    }
+}
+
+class LowercaseAdvice(): MethodInterceptor {
+    override fun invoke(invocation: MethodInvocation): Any {
+        val ret = invocation.proceed() as String
+        return ret.lowercase()
+    }
+}
+
+class UppercaseAdvice(): MethodInterceptor {
+    override fun invoke(invocation: MethodInvocation): Any {
+        val ret = invocation.proceed() as String
+        return ret.uppercase()
     }
 }

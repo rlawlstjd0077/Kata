@@ -5,27 +5,32 @@ import com.kata.spring.toby.TobyTestConfig
 import com.kata.spring.toby.User
 import com.kata.spring.toby.repository.UserDao
 import com.kata.spring.toby.repository.UserDaoJdbc
+import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestMethodOrder
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.ApplicationContext
 import org.springframework.jdbc.BadSqlGrammarException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
 import org.springframework.mail.MailSender
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.annotation.Transactional
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
-import java.lang.reflect.Proxy
 import javax.annotation.PostConstruct
 import javax.sql.DataSource
 
 /**
  * TODO 특정 패키지 아래로 Component Scan 수행하도록 수정 필요함
  */
-@SpringBootTest(classes = [UserServiceImpl::class, UserDaoJdbc::class, TobyTestConfig::class])
+@SpringBootTest(classes = [UserServiceImpl::class, UserDaoJdbc::class, TobyTestConfig::class, TestUserServiceExceptionGenerator::class])
 @ActiveProfiles("test")
+@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class UserServiceTest {
     @Autowired
     private lateinit var dataSource: DataSource
@@ -43,6 +48,9 @@ class UserServiceTest {
 
     @Autowired
     private lateinit var mockMailSender: MailSender
+
+    @Autowired
+    private lateinit var userServiceExceptionGenerator: TestUserServiceExceptionGenerator
 
 
     @PostConstruct
@@ -62,6 +70,7 @@ class UserServiceTest {
 
 
     @Test
+    @Order(1)
     fun `add() 테스트`() {
         // given
         val userWithLevel = users[4]    //GOLD
@@ -80,6 +89,7 @@ class UserServiceTest {
     }
 
     @Test
+    @Order(2)
     fun `upgradeLevels() 테스트`() {
         val userDao = MockUserDao(users)
         val userServiceImpl = UserServiceImpl(mockMailSender, userDao)
@@ -101,34 +111,17 @@ class UserServiceTest {
         expectThat(updated.id) isEqualTo expectedId
         expectThat(updated.level) isEqualTo expectedLevel
     }
-
     @Test
+    @Order(3)
     fun `updateAllorNothing`() {
         // given
-        val transactionHandler = TransactionHandler(
-            target = TestUserService(
-                id = users[3].id,
-                userDao = userDao,
-                mailSender = MockMailSender()
-            ),
-            transactionManager = transactinoManager,
-            patter = "upgradeLevels"
-        )
-
-        val txUserService = Proxy.newProxyInstance(
-            ClassLoader.getSystemClassLoader(),
-            arrayOf(UserService::class.java),
-            transactionHandler
-        ) as UserService
-
         users.forEach {
             userDao.add(it)
         }
 
         try {
-            txUserService.upgradeLevels()
-        } catch (e: TestServiceExecption) {
-
+            userServiceExceptionGenerator.upgradeLevelsAndThrowException()
+        } catch (e: RuntimeException) {
         }
 
         checkLevel(users[1], false)

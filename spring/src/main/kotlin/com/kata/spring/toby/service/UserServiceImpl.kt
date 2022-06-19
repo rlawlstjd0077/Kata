@@ -3,19 +3,17 @@ package com.kata.spring.toby.service
 import com.kata.spring.toby.Level
 import com.kata.spring.toby.User
 import com.kata.spring.toby.repository.UserDao
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.mail.MailSender
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.stereotype.Service
-import org.springframework.transaction.PlatformTransactionManager
-import org.springframework.transaction.support.DefaultTransactionDefinition
+import org.springframework.transaction.annotation.Transactional
 
 
 /**
  * @author Jay
  */
-@Service()
-open class UserServiceImpl(
+@Service
+class UserServiceImpl(
     private val mailSender: MailSender,
     private val userDao: UserDao
 ) : UserService {
@@ -25,8 +23,17 @@ open class UserServiceImpl(
         userDao.add(user)
     }
 
+    @Transactional
     override fun upgradeLevels() {
         upgradeLevelsInternal()
+    }
+
+    override fun get(id: String): User {
+        return userDao.get(id)
+    }
+
+    override fun getAll(): List<User> {
+        return userDao.getAll()
     }
 
     private fun upgradeLevelsInternal() {

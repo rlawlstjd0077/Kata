@@ -20,6 +20,7 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.DefaultTransactionDefinition
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import javax.annotation.PostConstruct
@@ -126,6 +127,30 @@ class UserServiceTest {
 
         checkLevel(users[1], false)
     }
+
+    @Test
+    @Order(3)
+    fun `transaction sync 테스트`() {
+        // given
+        userDao.deleteAll()
+        expectThat(userDao.getCount()) isEqualTo 0
+
+        val definitnion = DefaultTransactionDefinition()
+        val txStatus = transactinoManager.getTransaction(definitnion)
+
+        userService.add(users[0])
+        userService.add(users[1])
+        expectThat(userDao.getCount()) isEqualTo 2
+
+        transactinoManager.rollback(txStatus)
+        expectThat(userDao.getCount()) isEqualTo 0
+
+        // when
+
+        // then
+    }
+
+
 
     private fun checkLevel(user: User, upgraded: Boolean) {
         val userUpdate = userDao.get(user.id)
